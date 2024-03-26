@@ -1,6 +1,7 @@
 package com.project.shopapp.Controller;
 
 import com.project.shopapp.Dto.OrderDto;
+import com.project.shopapp.models.Order;
 import com.project.shopapp.services.IOrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,18 +30,30 @@ public class OrderController {
                         .toList();
                 return ResponseEntity.badRequest().body(errorMessage);
             }
-            OrderResponse orderResponse =  orderService.createOrder(orderDto);
-            return ResponseEntity.ok(orderResponse);
+            Order order =  orderService.createOrder(orderDto);
+            return ResponseEntity.ok(order);
         }catch (Exception e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @GetMapping("/{user_id}")
-    public ResponseEntity<?> getOrder(
+    @GetMapping("/user/{user_id}")
+    public ResponseEntity<?> getOrders(
             @Valid @PathVariable("user_id" ) Long userId
     ){
         try {
-            return ResponseEntity.ok("lay ra danh sach order tu userId");
+            List<Order> orders = orderService.findByUserId(userId);
+            return ResponseEntity.ok(orders);
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getOrder(
+            @Valid @PathVariable("id" ) Long orderId
+    ){
+        try {
+            Order existingOrder = orderService.getOrder(orderId);
+            return ResponseEntity.ok(existingOrder);
         }catch (Exception e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -50,12 +63,19 @@ public class OrderController {
             @Valid @PathVariable long id,
             @Valid @RequestBody OrderDto orderDto
     ){
-        return ResponseEntity.ok("cap nhap 1 thong tin moi");
+
+        try {
+            Order order = orderService.updateOrder(id, orderDto);
+            return ResponseEntity.ok(order);
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteOrder(
             @Valid @PathVariable Long id
     ){
+        orderService.deleteOrder(id);
         return ResponseEntity.ok("Order delete successfully");
     }
 }

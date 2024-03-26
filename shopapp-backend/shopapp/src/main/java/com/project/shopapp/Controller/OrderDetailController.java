@@ -1,13 +1,17 @@
 package com.project.shopapp.Controller;
 
 import com.project.shopapp.Dto.OrderDetailDto;
+import com.project.shopapp.services.OrderDetailService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("${api.prefix}/order_details")
+@RequiredArgsConstructor
 public class OrderDetailController {
+    public final OrderDetailService orderDetailService;
     @PostMapping
     public ResponseEntity<?> createOrderDetail(
             @Valid @RequestBody OrderDetailDto orderDetailDto
@@ -37,6 +41,7 @@ public class OrderDetailController {
     public ResponseEntity<Void> deleteOrderDetail(
             @Valid @PathVariable("id") Long id
     ){
+
         return ResponseEntity.noContent().build();
     }
 }
