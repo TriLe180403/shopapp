@@ -10,6 +10,7 @@ import com.project.shopapp.models.ProductImage;
 import com.project.shopapp.repositories.CategoryRepository;
 import com.project.shopapp.repositories.ProductImageRepository;
 import com.project.shopapp.repositories.ProductRepository;
+import com.project.shopapp.responses.ProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +33,7 @@ public class ProductService implements IProductService{
                 .name(productDto.getName())
                 .price(productDto.getPrice())
                 .thumbnail(productDto.getThumbnail())
+                .description(productDto.getDescription())
                 .category(existingCategory)
                 .build();
         return productRepository.save(newProduct);
@@ -44,9 +46,10 @@ public class ProductService implements IProductService{
     }
 
     @Override
-    public Page<Product> getAllProducts(PageRequest pageRequest) {
+    public Page<ProductResponse> getAllProducts(PageRequest pageRequest) {
         //lay danh sach san pham theo page & limit
-        return productRepository.findAll(pageRequest);
+        return productRepository.findAll(pageRequest).map(ProductResponse::fromProduct);
+
     }
 
     @Override

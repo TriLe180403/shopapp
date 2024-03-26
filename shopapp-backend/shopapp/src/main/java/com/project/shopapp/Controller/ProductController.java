@@ -1,11 +1,17 @@
 package com.project.shopapp.Controller;
+import com.github.javafaker.Faker;
 import com.project.shopapp.Dto.ProductDto;
 import com.project.shopapp.Dto.ProductImageDto;
 import com.project.shopapp.models.Product;
 import com.project.shopapp.models.ProductImage;
+import com.project.shopapp.responses.ProductListResponse;
+import com.project.shopapp.responses.ProductResponse;
 import com.project.shopapp.services.IProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +27,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 
@@ -30,15 +37,31 @@ import java.util.UUID;
 public class ProductController {
     private final IProductService productService;
     @GetMapping("")
-    public ResponseEntity<String> getProduct(
+    public ResponseEntity<ProductListResponse> getProduct(
             @RequestParam("page") int page,
             @RequestParam("limit") int limit
     ){
-        return ResponseEntity.ok("getProducts here");
+        PageRequest pageRequest = PageRequest.of(page, limit,
+                Sort.by("createdAt").descending());
+        Page<ProductResponse> productPage = productService.getAllProducts(pageRequest);
+        //lấy ra tổng số trang
+        int totalPage = productPage.getTotalPages();
+        //ấy ra list các danh sách sản phẩm
+        List<ProductResponse> products = productPage.getContent();
+        return ResponseEntity.ok(ProductListResponse.builder()
+                        .products(products)
+                        .totalPages(totalPage)
+                .build());
     }
     @GetMapping("/{id}")
-    public ResponseEntity<String> updateProduct(@PathVariable ("id") String productId){
-        return ResponseEntity.ok("Product with id"+productId);
+    public ResponseEntity<?> updateProduct(@PathVariable ("id") Long productId){
+        try {
+            Product existingProduct = productService.getProductById(productId);
+            return ResponseEntity.ok(ProductResponse.fromProduct(existingProduct));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+
     }
     @PostMapping( "")
     public ResponseEntity<?> createProduct(
@@ -84,12 +107,7 @@ public class ProductController {
                     return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
                             .body("file is too large");
                 }
-                //kiểm tra định dạng file ảnh
-                String contentType = file.getContentType();
-                if (contentType == null || !contentType.startsWith("image/")){
-                    return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                            .body("File must be an image");
-                }
+
 //                lưu file cập nhập vào thumbnail
                 String filename =storeFile(file);
                 ProductImage productImage = productService.createProductImage(
@@ -107,7 +125,10 @@ public class ProductController {
 
     }
     private String storeFile(MultipartFile file) throws IOException{
-        String filename = StringUtils.cleanPath(file.getOriginalFilename());
+        if (!isImageFile(file) || file.getOriginalFilename() == null){
+            throw new IOException("Invalid image format");
+        }
+        String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
 //        thêm UUID vào trước filename để đảm bảo file là duy nhất
         String uniqueFilename = UUID.randomUUID().toString() + "_" + filename;
 //        đường dẫn thư mục
@@ -129,6 +150,47 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteProduct(@PathVariable long id){
-        return ResponseEntity.ok(String.format("Product delete with id= %d Successfully",id));
+        try {
+            productService.deleteProduct(id);
+            return ResponseEntity.ok(String.format("Product delete with id= %d Successfully",id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+
+    }
+    //@PostMapping("/generateFakerProducts")
+    public ResponseEntity<String> generateFakerProducts(){
+         Faker faker = new Faker();
+        for (int i = 0; i < 1000; i++){
+            String productName = faker.commerce().productName();
+            if (productService.existsByName(productName)){
+                continue;
+            }
+            ProductDto productDto = ProductDto.builder()
+                    .name(productName)
+                    .price((float) faker.number().numberBetween(10, 90000000))
+                    .description(faker.lorem().sentence())
+                    .thumbnail("")
+                    .categoryId((long) faker.number().numberBetween(3,6))
+                    .build();
+            try {
+                productService.createProduct(productDto);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(e.getMessage());
+            }
+        }
+        return ResponseEntity.ok("fake products created successfully");
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateProduct(
+            @PathVariable long id,
+            @RequestBody ProductDto productDto
+    ){
+        try {
+            Product updateProduct = productService.updateProduct(id, productDto);
+            return ResponseEntity.ok(updateProduct);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
