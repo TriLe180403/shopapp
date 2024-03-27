@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -72,7 +73,7 @@ public class ProductService implements IProductService{
 
     @Override
     public void deleteProduct(long id) {
-        Optional<Product> optionalProduct = productRepository.findById(id);
+       Optional<Product> optionalProduct = productRepository.findById(id);
         optionalProduct.ifPresent(productRepository::delete);
     }
 

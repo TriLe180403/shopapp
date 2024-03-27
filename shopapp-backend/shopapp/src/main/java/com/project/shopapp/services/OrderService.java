@@ -15,7 +15,6 @@ import java.time.LocalDate;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -43,7 +42,7 @@ public class OrderService implements IOrderService{
         order.setStatus(OrderStatus.PENDING);
         //Kểm tra shipping date phải >= ngày hôm nay
         LocalDate shipppingdate = orderDto.getShippingDate() ==null
-                ? LocalDate.now() :orderDto.getShippingDate();
+                ? LocalDate.now() : orderDto.getShippingDate();
         if (shipppingdate.isBefore(LocalDate.now())){
             throw new DataNotFoundException("date must be at least today");
         }
