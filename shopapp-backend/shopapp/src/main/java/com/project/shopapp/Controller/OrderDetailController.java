@@ -42,7 +42,8 @@ public class OrderDetailController {
             List<OrderDetail> orderDetails = orderDetailService.findByOrderId(orderId);
             List<OrderDetailResponse> orderDetailResponses = orderDetails
                     .stream()
-                    .map(OrderDetailResponse::fromOrderDetail)//orderDetail -> OrderDetailResponse.fromOrderDetail(orderDetail)
+                    .map(OrderDetailResponse::fromOrderDetail)
+                    //orderDetail -> OrderDetailResponse.fromOrderDetail(orderDetail)
                     .toList();
             return ResponseEntity.ok(orderDetailResponses);
     }
